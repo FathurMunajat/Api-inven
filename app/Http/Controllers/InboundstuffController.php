@@ -170,18 +170,5 @@ class InboundstuffController extends Controller
             return ApiFormatter::sendResponse(400, 'bad request', $err->getMessage());
         }
     }   
-    
 
-    private function deleteAssociatedFile(InboundStuff $inboundStuff)
-    {
-        
-        $publicPath = $_SERVER['DOCUMENT_ROOT'] . '/public/proof';
-
-         $filePath = public_path('proof/'.$inboundStuff->proof_file);
-    
-        if (file_exists($filePath)) {
-            
-            unlink(base_path($filePath));
-        }
-    }
 }
