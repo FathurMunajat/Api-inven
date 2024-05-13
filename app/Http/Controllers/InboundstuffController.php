@@ -11,6 +11,11 @@ use Illuminate\Support\Str;
 
 class InboundstuffController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth:api');
+    }
+
     public function index(request $request)
     {
         try{
@@ -90,14 +95,20 @@ class InboundstuffController extends Controller
             $inboundData = Inboundstuff::where('id', $id)->first();
             $stuffId = $inboundData['stuff_id'];
             $totalInbound = $inboundData['total'];
-            $inboundData->delete();
 
             $dataStock = StuffStock::where('stuff_id',$inboundData['stuff_id'])->first();
-            $total_available = (int)$inboundData['total_available'] - (int)$inboundData['total'];
+            $total_available = (int)$dataStock['total_available'] - (int)$totalInbound;
+
+            if ($total_available < $totalInbound) {
+                return ApiFormatter::sendResponse(400,'bad request','Jumlah total imbound yang akan dihapus lebih besar dari total available stuff saat ini!');
+            }
+            
+            $inboundData->delete();
+
             $minusTotalStock = StuffStock::where('stuff_id', $inboundData['stuff_id'])->update(['total_available' => $total_available]);
 
             if ($minusTotalStock){
-                $updatedStuffWithInboundAndStock = Stuff::where('id', $inboundData['staff_id'])->with('inboundStuffs','stuffStock')->first();
+                $updatedStuffWithInboundAndStock = Stuff::where('id', $inboundData['stuff_id'])->with('inboundStuffs','stuffStock')->first();
                 
                 $inboundData->delete();
                 return ApiFormatter::sendResponse(200,'Success',$updatedStuffWithInboundAndStock);
@@ -127,21 +138,13 @@ class InboundstuffController extends Controller
             if ($checkProses) {
                
                 $restoredData = InboundStuff::find($id);
-    
-                
                 $totalRestored = $restoredData->total;
-    
-                
                 $stuffId = $restoredData->stuff_id;
-    
-                
                 $stuffStock = StuffStock::where('stuff_id', $stuffId)->first();
                 
                 if ($stuffStock) {
-                    
                     $stuffStock->total_available += $totalRestored;
     
-                
                     $stuffStock->save();
                 }
     

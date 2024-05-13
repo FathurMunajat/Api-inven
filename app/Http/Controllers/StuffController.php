@@ -10,6 +10,11 @@ use PhpParser\Node\Stmt\Catch_;
 
 class StuffController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth:api');
+    }
+
     public function index()
         {
             try {
@@ -90,18 +95,34 @@ class StuffController extends Controller
             return ApiFormatter::sendResponse(400, 'bad request', $err->getMessage());
     }
   }
+
   public function destroy($id)
   {
-    try {
-        $checkProsess = Stuff::where('id',$id)->delete();
+      try{
+          $stuff = Stuff::where('id', $id)->first();
 
-        if($checkProsess){
-            return ApiFormatter::sendResponse(200, 'succes','Berhasil hapus data stuff!');
+              if($stuff->inboundStuffs()->exists()) {
+                  return ApiFormatter::sendResponse(400,'bad request', 'Tidak dapat menghapus data stuff karena sudah terdapat data inbound!');
+                }
+
+                elseif($stuff->stuffStock()->exists()) {
+                return ApiFormatter::sendResponse(400,'bad request', 'Tidak dapat menghapus data stuff karena sudah terdapat data inbound!');
+                }
+
+                elseif($stuff->lending()->exists()) {
+                return ApiFormatter::sendResponse(400,'bad request', 'Tidak dapat menghapus data stuff karena sudah terdapat data inbound!');
+                }
+                
+              $checkProsess = $stuff->delete();
+
+          if ($checkProsess) {
+              return Apiformatter::sendResponse(200, 'succes', 'Berhasil hapus data stuff');
             }
-        } catch(\Exception $err) {
-            return ApiFormatter::sendResponse(400, 'bad request', $err->getMessage());
-    }
+      }catch (\Exception $err) {
+          return Apiformatter::sendResponse(400, 'bad request', $err->getMessage());
   }
+}
+  
   public function trash()
   {
     try{
